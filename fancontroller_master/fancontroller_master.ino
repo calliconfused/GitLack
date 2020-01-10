@@ -64,6 +64,8 @@ long            TIMER_TE_REST =   1500;
 int             TS_POSX;
 int             TS_POSY;
 
+int             TFT_ROTATION  =   2;
+
 int             SELECTED_FAN;   // 0 = OFF, 1 = 33%, 2 = 66%, 3 = FULL, 4 = AUTO
 int             SELECTED_LED;   // 0 = OFF, 1 = 25%, 2 = 50%, 3 = 75%,  4 = FULL
 int             SELECTED_FAN_LAST;
@@ -107,7 +109,7 @@ void setup(void) {
   Serial.println("OK - PASSED!");
   Serial.println("WELCOME to FAN & SPEED CONTROL UNIT");
   
-  tft.setRotation(0);
+  tft.setRotation(TFT_ROTATION);
   tft.fillScreen(COLOR_BLACK);
   
   pinMode(13, OUTPUT);
@@ -173,9 +175,9 @@ void loop() {
   //pinMode(YM, OUTPUT); 
 
   if ( p.z > MINPRESSURE && p.z < MAXPRESSURE && TIMER_TS_DELAY <= millis() ) {
-
-    TS_POSX = map(p.x, TS_MINX, TS_MAXX, 0, tft.width());
-    TS_POSY = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);   
+ 
+    TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+    TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());   
 
     TIMER_TS_DELAY = millis() + TIMER_TS_REST;
     

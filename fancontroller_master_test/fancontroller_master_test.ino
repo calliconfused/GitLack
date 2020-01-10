@@ -2,7 +2,7 @@
 #include        <Wire.h>
 #include        <TouchScreen.h>
 
-#include        <Adafruit_GFX.h>    // Core graphics library
+#include        <TFT_ILI9341.h>    // Core graphics library
 #include        <Adafruit_TFTLCD.h> // Hardware-specific library
 #include        <Fonts/OpenSansCondensed16pt.h>
 #include        <Fonts/OpenSansCondensed24pt.h>
@@ -24,24 +24,24 @@
 #define         LCD_RESET         1 // Can alternately just connect to Arduino's reset pin
 
 #define         COLOR_BLACK       0x0000
-#define         COLOR_NAVY        0x000F
-#define         COLOR_DARKGREEN   0x03E0
-#define         COLOR_DARKCYAN    0x03EF
-#define         COLOR_MAROON      0x7800
-#define         COLOR_PURPLE      0x780F
-#define         COLOR_OLIVE       0x7BE0
+//#define         COLOR_NAVY        0x000F
+//#define         COLOR_DARKGREEN   0x03E0
+//#define         COLOR_DARKCYAN    0x03EF
+//#define         COLOR_MAROON      0x7800
+//#define         COLOR_PURPLE      0x780F
+//#define         COLOR_OLIVE       0x7BE0
 #define         COLOR_LIGHTGREY   0xC618
 #define         COLOR_DARKGREY    0x7BEF
-#define         COLOR_BLUE        0x001F
+//#define         COLOR_BLUE        0x001F
 #define         COLOR_GREEN       0x07E0
-#define         COLOR_CYAN        0x07FF
+//#define         COLOR_CYAN        0x07FF
 #define         COLOR_RED         0xF800
-#define         COLOR_MAGENTA     0xF81F
+//#define         COLOR_MAGENTA     0xF81F
 #define         COLOR_YELLOW      0xFFE0
 #define         COLOR_WHITE       0xFFFF
 #define         COLOR_ORANGE      0xFD20
 #define         COLOR_GREENYELLOW 0xAFE5
-#define         COLOR_PINK        0xF81F
+//#define         COLOR_PINK        0xF81F
 
 #define         TS_MINX           120
 #define         TS_MAXX           900
@@ -66,6 +66,8 @@ long            TIMER_TE_REST =   1500;
 int             TS_POSX;
 int             TS_POSY;
 
+int             TFT_ROTATION  =   2;
+
 int             SELECTED_FAN;   // 0 = OFF, 1 = 33%, 2 = 66%, 3 = FULL, 4 = AUTO
 int             SELECTED_LED;   // 0 = OFF, 1 = 25%, 2 = 50%, 3 = 75%,  4 = FULL
 int             SELECTED_FAN_LAST;
@@ -75,6 +77,15 @@ int             POS_CIRCLE_X[] =  {72, 208};
 int             POS_CIRCLE_Y[] =  {302, 275, 248, 221, 194};
 char            *DESC_OPTIONS_FAN[] = {"OFF", "33%", "66%", "FULL", "AUTO"};
 char            *DESC_OPTIONS_LED[] = {"OFF", "25%", "50%", "75%", "FULL"};
+
+byte            SYMBOL_FAN;
+unsigned long   SYMBOL_FAN_DELAY;
+int             SYMBOL_FAN_REST = 500;
+
+byte            POS_SYMBOL_X    = 75;
+byte            POS_SYMBOL_Y    = 155;
+byte            SIZE_SYMBOL     = 24;
+
 
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); // zwischen XP und XM den wiederstand messen und wert anpassen
 TSPoint p;
@@ -95,6 +106,9 @@ void setup(void) {
   SELECTED_LED = 4;
   SELECTED_LED_LAST = 9;
 
+  SYMBOL_FAN = 1;
+  SYMBOL_FAN_DELAY = millis();
+  
   TS_POSX = 0;
   TS_POSY = 0;
   
@@ -109,7 +123,7 @@ void setup(void) {
   Serial.println("OK - PASSED!");
   Serial.println("WELCOME to FAN & SPEED CONTROL UNIT");
   
-  tft.setRotation(0);
+  tft.setRotation(TFT_ROTATION);
   tft.fillScreen(COLOR_BLACK);
   
   pinMode(13, OUTPUT);
@@ -157,8 +171,6 @@ void setup(void) {
       
     }
   }
-
-  tft.drawBitmap(0, 0, bell, 10, 10, COLOR_YELLOW);
   
   Serial.println("Ready, waiting for user input!");
 
@@ -178,8 +190,8 @@ void loop() {
 
   if ( p.z > MINPRESSURE && p.z < MAXPRESSURE && TIMER_TS_DELAY <= millis() ) {
 
-    TS_POSX = map(p.x, TS_MINX, TS_MAXX, 0, tft.width());
-    TS_POSY = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);   
+    TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+    TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());   
 
     TIMER_TS_DELAY = millis() + TIMER_TS_REST;
     
@@ -248,6 +260,33 @@ void loop() {
   vChangeButtons(SELECTED_FAN, SELECTED_FAN_LAST, 0);
   vChangeButtons(SELECTED_LED, SELECTED_LED_LAST, 1);
 
+  if ( SYMBOL_FAN_DELAY <= millis() ) {
+    
+    tft.fillRect(POS_SYMBOL_X, POS_SYMBOL_Y, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_BLACK);
+    
+    if ( SYMBOL_FAN == 1 ) {
+      tft.drawBitmap(POS_SYMBOL_X, POS_SYMBOL_Y, FAN_A, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_YELLOW);
+    } else
+    if ( SYMBOL_FAN == 2 ) {
+      tft.drawBitmap(POS_SYMBOL_X, POS_SYMBOL_Y, FAN_B, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_YELLOW);
+    } else
+    if ( SYMBOL_FAN == 3 ) {
+      tft.drawBitmap(POS_SYMBOL_X, POS_SYMBOL_Y, FAN_C, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_YELLOW);
+    } else
+    if ( SYMBOL_FAN == 4 ) {
+      tft.drawBitmap(POS_SYMBOL_X, POS_SYMBOL_Y, FAN_D, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_YELLOW);
+    } else
+    if ( SYMBOL_FAN == 5 ) {
+      tft.drawBitmap(POS_SYMBOL_X, POS_SYMBOL_Y, FAN_E, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_YELLOW);
+    } else
+    if ( SYMBOL_FAN == 6 ) {
+      tft.drawBitmap(POS_SYMBOL_X, POS_SYMBOL_Y, FAN_F, SIZE_SYMBOL, SIZE_SYMBOL, COLOR_YELLOW);
+      SYMBOL_FAN = 0;
+    }
+    SYMBOL_FAN++;
+    SYMBOL_FAN_DELAY = millis() + SYMBOL_FAN_REST;
+  }
+
 }
 
 void vShowTemperature() {
@@ -300,10 +339,10 @@ void vChangeButtons(int SELECTED_OPTION, int SELECTED_OPTION_LAST, int SELECTED_
 
     // fill the current selection
 
-    Serial.print("Selected Type: "); Serial.print(SELECTED_TYPE); 
-    Serial.print("\tPosition X: "); Serial.print(POS_CIRCLE_X[SELECTED_TYPE]);
-    Serial.print("\tSelected Option: "); Serial.print(SELECTED_OPTION);
-    Serial.print("\tPosition Y: "); Serial.println(POS_CIRCLE_Y[SELECTED_OPTION]);
+    //Serial.print("Selected Type: "); Serial.print(SELECTED_TYPE); 
+    //Serial.print("\tPosition X: "); Serial.print(POS_CIRCLE_X[SELECTED_TYPE]);
+    //Serial.print("\tSelected Option: "); Serial.print(SELECTED_OPTION);
+    //Serial.print("\tPosition Y: "); Serial.println(POS_CIRCLE_Y[SELECTED_OPTION]);
     
     tft.fillCircle(POS_CIRCLE_X[SELECTED_TYPE], POS_CIRCLE_Y[SELECTED_OPTION], 7, COLOR_LIGHTGREY);
 
@@ -318,4 +357,3 @@ void vChangeButtons(int SELECTED_OPTION, int SELECTED_OPTION_LAST, int SELECTED_
     Wire.endTransmission();
   }
 }
-
