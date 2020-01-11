@@ -4,9 +4,9 @@
 
 #include        <Adafruit_GFX.h>    // Core graphics library
 #include        <Adafruit_TFTLCD.h> // Hardware-specific library
-#include        <Fonts/OpenSansCondensed16pt.h>
-#include        <Fonts/OpenSansCondensed24pt.h>
-#include        <Fonts/DSEG7ClassicMini40pt.h>
+#include        "OpenSansCondensed16pt.h"
+#include        "DSEG7REGULAR40.h"
+#include        "bitmaps.h"
 
 #include        <Adafruit_BME280.h>
 
@@ -40,6 +40,7 @@
 #define         COLOR_ORANGE      0xFD20
 #define         COLOR_GREENYELLOW 0xAFE5
 #define         COLOR_PINK        0xF81F
+#define         COLOR_ARSENIC     0x2965
 
 #define         TS_MINX           120
 #define         TS_MAXX           900
@@ -56,6 +57,10 @@ uint16_t        BME_ID =          0x76;
 
 float           TEMPERATURE_CURRENT;
 float           TEMPERATURE_LAST;
+
+int             TEMP_TARGET_MIN = 18;
+int             TEMP_TARGET_MAX = 40;
+
 unsigned long   TIMER_TS_DELAY;
 long            TIMER_TS_REST =   1000;
 unsigned long   TIMER_TE_DELAY;
@@ -64,7 +69,7 @@ long            TIMER_TE_REST =   1500;
 int             TS_POSX;
 int             TS_POSY;
 
-int             TFT_ROTATION  =   2;
+int             TFT_ROTATION  =   3;
 
 int             SELECTED_FAN;   // 0 = OFF, 1 = 33%, 2 = 66%, 3 = FULL, 4 = AUTO
 int             SELECTED_LED;   // 0 = OFF, 1 = 25%, 2 = 50%, 3 = 75%,  4 = FULL
@@ -85,6 +90,9 @@ Adafruit_BME280 bme;
 void setup(void) {
   
   Serial.begin(9600);
+
+  Serial.println("INITALIZING");
+  
   Wire.begin();
   
   TEMPERATURE_CURRENT = 0;
@@ -106,60 +114,75 @@ void setup(void) {
   tft.reset();
   tft.begin(LCD_ID);
   
-  Serial.println("OK - PASSED!");
-  Serial.println("WELCOME to FAN & SPEED CONTROL UNIT");
-  
   tft.setRotation(TFT_ROTATION);
   tft.fillScreen(COLOR_BLACK);
   
   pinMode(13, OUTPUT);
   
   tft.setTextColor(COLOR_LIGHTGREY);
-  tft.setFont(&Open_Sans_Condensed_Bold_24);
-  
-  tft.setCursor(73, 20);
-  tft.print("FAN & LED");
-  
-  tft.setCursor(50, 40);
-  tft.print("CONTROL UNIT"); 
-  
-  tft.setCursor(174, 96 + 42);
-  tft.print("C"); 
-
-  tft.setCursor(31, 175);
-  tft.print("FAN");
-
-  tft.setCursor(164, 175);
-  tft.print("LED");
-  
   tft.setFont(&Open_Sans_Condensed_Bold_16);
+
+  // Überschrift
+  tft.setCursor(112, 20);   tft.print("GitLACK | v0.2");
+
+  // grid
+  tft.drawFastHLine(0, 31, 320, COLOR_DARKGREY);
+  tft.drawFastHLine(0, 192, 320, COLOR_DARKGREY);
   
-  tft.setCursor(40, 80);
-  tft.print("CURRENT TEMPERATURE");   
+  tft.drawFastVLine(130, 31, 161, COLOR_DARKGREY);
+  tft.drawFastVLine(190, 31, 161, COLOR_DARKGREY);
+  tft.drawFastVLine(160, 192, 48, COLOR_DARKGREY);
 
-  // circle for degrees
-  tft.drawCircle(170, 120, 4, COLOR_LIGHTGREY);
-  tft.drawCircle(170, 120, 3, COLOR_LIGHTGREY);
+  // left area of current temperature
+  tft.drawCircle(113, 114, 1, COLOR_LIGHTGREY);
+  tft.drawCircle(113, 114, 2, COLOR_LIGHTGREY);
 
-  // round rectangulars and text based on cirlce positions
+  tft.setCursor(116, 128);  tft.print("C");  
+  tft.setCursor(39, 50);   tft.print("current");
+  tft.setCursor(22, 68);   tft.print("temperature");
 
-  for ( int i = 0; i <= 1; i++ ) {
-    for ( int j = 0; j <= 4; j++ ) {
-      tft.drawRoundRect(POS_CIRCLE_X[i] - 12, POS_CIRCLE_Y[j] - 12, 25, 25, 3, COLOR_DARKGREY);
-      tft.setCursor(POS_CIRCLE_X[i] - 57, POS_CIRCLE_Y[j] + 6);
+  // right area of target temperature
+  tft.drawCircle(303, 114, 1, COLOR_LIGHTGREY);
+  tft.drawCircle(303, 114, 2, COLOR_LIGHTGREY);
 
-      if ( i == 0 ) {
-        tft.print(DESC_OPTIONS_FAN[j]);  
-      } else
-      if ( i == 1 ) {
-        tft.print(DESC_OPTIONS_LED[j]);  
-      }
-      
-    }
-  }
+  tft.setCursor(306, 128);  tft.print("C");  
+  tft.setCursor(233, 50);   tft.print("target");
+  tft.setCursor(216, 68);   tft.print("temperature");
+
+  // middle area to set temperature
+  tft.setCursor(150, 50);  tft.print("SET"); 
   
-  Serial.println("Ready, waiting for user input!");
+  tft.drawBitmap(144, 64, SYMBOL_arrowup, 32, 32, COLOR_LIGHTGREY);
+  tft.drawRoundRect(142, 62, 36, 36, 4, COLOR_LIGHTGREY);
+  
+  tft.drawBitmap(144, 108, SYMBOL_arrowdown, 32, 32, COLOR_LIGHTGREY);
+  tft.drawRoundRect(142, 106, 36, 36, 4, COLOR_LIGHTGREY);
+  
+  tft.drawBitmap(144, 152, SYMBOL_switchoff, 32, 32, COLOR_LIGHTGREY);
+  tft.drawRoundRect(142, 150, 36, 36, 4, COLOR_LIGHTGREY);
 
+  // lower left area to set the preset
+  tft.setCursor(4, 212);  tft.print("preset"); 
+  tft.setCursor(8, 232);  tft.print("temp");
+
+  tft.setCursor(66, 224);  tft.print("PLA"); 
+  tft.drawRoundRect(58, 200, 42, 36, 4, COLOR_LIGHTGREY);
+  tft.setCursor(116, 224);  tft.print("ABS"); 
+  tft.drawRoundRect(108, 200, 42, 36, 4, COLOR_LIGHTGREY);
+  
+  Serial.println("OK - PASSED!");
+  Serial.println("WELCOME to FAN & SPEED CONTROL UNIT");
+
+
+  // TEST PLACE
+  tft.setFont(&DSEG7REGULAR40);
+  tft.setTextColor(COLOR_ARSENIC);
+  tft.setCursor(196, 130);  tft.print("88.8");
+  
+  tft.setTextColor(COLOR_RED);
+  tft.setCursor(196, 130);  tft.print(";:");
+  tft.setTextColor(COLOR_ARSENIC);  tft.print(".");
+  tft.setTextColor(COLOR_RED);  tft.print(":");
 }
 
 void loop() {
@@ -184,7 +207,7 @@ void loop() {
   }
 
   // now the long if statement of the pressed position
-
+/*
   if  (( TS_POSX >= 10 ) && ( TS_POSX <= 90 ) && ( TS_POSY >= 182 ) && ( TS_POSY <= 204 )) {
     SELECTED_FAN = 4;
   }
@@ -223,7 +246,7 @@ void loop() {
   
   if  (( TS_POSX >= 150 ) && ( TS_POSX <= 230 ) && ( TS_POSY >= 290 ) && ( TS_POSY <= 314 )) {
     SELECTED_LED = 0;
-  }
+  }*/
 
   if ( TIMER_TE_DELAY <= millis() ) {
     vShowTemperature();
@@ -243,8 +266,8 @@ void loop() {
     TIMER_TE_DELAY = millis() + TIMER_TE_REST;
   }
   
-  vChangeButtons(SELECTED_FAN, SELECTED_FAN_LAST, 0);
-  vChangeButtons(SELECTED_LED, SELECTED_LED_LAST, 1);
+  //vChangeButtons(SELECTED_FAN, SELECTED_FAN_LAST, 0);
+  //vChangeButtons(SELECTED_LED, SELECTED_LED_LAST, 1);
 
 }
 
@@ -257,9 +280,10 @@ void vShowTemperature() {
 
   if ( TEMPERATURE_CURRENT != TEMPERATURE_LAST) {
 
-    tft.fillRect(64, 96, 97, 44, COLOR_BLACK);
-
-    tft.setCursor(61, 138);
+    tft.setTextColor(COLOR_ARSENIC);
+    tft.setCursor(6, 130);  tft.print("88.8");
+    
+    tft.setCursor(6, 130);
 
     if ( TEMPERATURE_CURRENT <= 30 ) {
       tft.setTextColor(COLOR_GREENYELLOW);  
@@ -270,9 +294,8 @@ void vShowTemperature() {
     if ( TEMPERATURE_CURRENT > 45 ) {
       tft.setTextColor(COLOR_ORANGE);  
     }     
-    tft.setFont(&DSEG7_Classic_Mini_Regular_40);
-    tft.print(";::");
-    //tft.print(TEMPERATURE_CURRENT, 1);
+    tft.setFont(&DSEG7REGULAR40);
+    tft.print(TEMPERATURE_CURRENT, 1);
  
   }
 
@@ -298,12 +321,6 @@ void vChangeButtons(int SELECTED_OPTION, int SELECTED_OPTION_LAST, int SELECTED_
     }    
 
     // fill the current selection
-
-    Serial.print("Selected Type: "); Serial.print(SELECTED_TYPE); 
-    Serial.print("\tPosition X: "); Serial.print(POS_CIRCLE_X[SELECTED_TYPE]);
-    Serial.print("\tSelected Option: "); Serial.print(SELECTED_OPTION);
-    Serial.print("\tPosition Y: "); Serial.println(POS_CIRCLE_Y[SELECTED_OPTION]);
-    
     tft.fillCircle(POS_CIRCLE_X[SELECTED_TYPE], POS_CIRCLE_Y[SELECTED_OPTION], 7, COLOR_LIGHTGREY);
 
     // send to slave
