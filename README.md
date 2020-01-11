@@ -1,5 +1,5 @@
 # GitLack renamed from FanController
-This is a simple project of an enclosure for a 3D printer which controls the fan speed and some lights. But why the name GitLack? It's a German acronym and it mean "Gehäuse Innen Temperatur & LED An/Aus Controller Krempel". Word by word translated in English it mean "Enclosure Inside Temperature & LED On/Off Controller Junk". On the other hand, the first syllable Git I want to share my project with you and I was stupid to built direct the right cabinet for my 3D printer. The last syllable for the name which I made the enclosure.
+This is a simple project of an enclosure for a 3D printer which controls the fan speed and some lights. But why the name GitLack? It's a German acronym and it means "Gehäuse Innen Temperatur & LED An/Aus Controller Krempel". Word by word translated in English it mean "Enclosure Inside Temperature & LED On/Off Controller Junk". On the other hand, the first syllable Git I want to share my project with you and I was stupid to built direct the right cabinet for my 3D printer. The last syllable for the name which I made the enclosure.
 
 Why this project?
 
