@@ -1,9 +1,9 @@
-# FanController
-This is a simple project of an enclosure for a 3D printer which controls the fan speed and some lights.
+# GitLack renamed from FanController
+This is a simple project of an enclosure for a 3D printer which controls the fan speed and some lights. But why the name GitLack? It's a German acronym and it mean "Gehäuse Innen Temperatur & LED An/Aus Controller Krempel". Word by word translated in English it mean "Enclosure Inside Temperature & LED On/Off Controller Junk". On the other hand, the first syllable Git I want to share my project with you and I was stupid to built direct the right cabinet for my 3D printer. The last syllable for the name which I made the enclosure.
 
 Why this project?
 
-So, during my experience with 3D printers I got on Xmas 2019 my new Anycubic 3D Mega. My old CTC printer got some problems during the time but more about this on a later stage. For the old printer I built a mixture of some cabinets out from the bargain basement of the well known Swedish furniture manufacturer. Cheap and already mounted, price was round about of 30 Euro with doors plus 4 LED strips (SMD 5050 with a very easy controller). The problem was that the alignment of the angle wasn't 90 degrees and if you put some weights on top of the cabinet ... okay, the doors was not really parallel opened.
+So, during my experience with 3D printers I got on Xmas 2019 my new Anycubic 3D Mega. My old CTC printer got some issues during the time but more about this on a later stage. For the old printer I built a mixture of some cabinets out from the bargain basement of the well known Swedish furniture manufacturer. Cheap and already mounted, price was round about of 30 Euro with doors plus 4 LED strips (SMD 5050 with a very easy controller). The problem was that the alignment of the angle wasn't 90 degrees and if you put some weights on top of the cabinet and ... okay, the doors was not really parallel opened.
 
 So for the new printer I checked the internet for some collections of the IKEA Lack table. It will look very good in my new office room at home. BUT I want to have an very smart enclosure with a controller of the temperature inside.
 
@@ -18,7 +18,7 @@ During my research how to handle a automatically temperature inside I found a bi
 The other MAIN problem of the Arduino UNO
 
 You see: 2.8" TFT touchscreen display and an Arduino Uno is a nightmare of save memory. As I started with the programming and put the my first sketch to build up the "boot" screen I reached the used memory of 60% ...........
-Next problem: the touchscreen will took a lot of pins and all PWM pins are blocked for that. (Okay, the card ready is not really necessary for my project but maybe for further updates. We will see.)
+Next problem: the touchscreen will took a lot of pins and all PWM pins are blocked for that. Okay, the card reader is not really necessary for my project but maybe for further updates. We will see.
 Someone will say now: hey, why do you don't order a MEGA 2560 clone or similar with more space, speed and pin?
 Yeah, you're correct! That's an easier way but my spirit is to use that parts which I already have at home. That's my personal milestone to start with I2C and put the second Arduino in the circuit (in my case the Nano). The master will collect all values from the user, pardon, from the pressed touchscreen and from the temperature sensor and give the values to the slave which will handle the logic of the fan speed and control the LEDs.
 
