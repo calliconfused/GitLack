@@ -10,6 +10,9 @@
 
 #include        <Adafruit_BME280.h>
 
+
+
+
 #define         YP                A3  // must be an analog pin, use "An" notation!
 #define         XM                A2  // must be an analog pin, use "An" notation!
 #define         YM                9   // can be a digital pin
@@ -20,6 +23,25 @@
 #define         LCD_WR            A1 // LCD Write goes to Analog 1
 #define         LCD_RD            A0 // LCD Read goes to Analog 0
 #define         LCD_RESET         1 // Can alternately just connect to Arduino's reset pin
+
+#define         TS_MINX           120
+#define         TS_MAXX           900
+#define         TS_MINY           70
+#define         TS_MAXY           920
+
+uint16_t        LCD_ID =          0x9341; //ILI9341 LCD driver
+uint16_t        BME_ID =          0x76;
+
+float           TEMP_TARGET_MIN = 18.0;
+float           TEMP_TARGET_MAX = 40.0;
+
+float           TEMP_PRESET_PLA = 25.0;
+float           TEMP_PRESET_ABS = 35.0;
+
+int             TFT_ROTATION  =   3;
+
+
+
 
 #define         COLOR_BLACK       0x0000
 #define         COLOR_NAVY        0x000F
@@ -42,46 +64,32 @@
 #define         COLOR_PINK        0xF81F
 #define         COLOR_ARSENIC     0x2965
 
-#define         TS_MINX           120
-#define         TS_MAXX           900
-#define         TS_MINY           70
-#define         TS_MAXY           920
-
 #define         MINPRESSURE       10
 #define         MAXPRESSURE       1000
 
 #define         NODE_MAX_NUMBERS  5
 
-uint16_t        LCD_ID =          0x9341; //ILI9341 LCD driver
-uint16_t        BME_ID =          0x76;
-
 float           TEMPERATURE_CURRENT;
 float           TEMPERATURE_LAST;
 
-int             TEMP_TARGET_MIN = 18;
-int             TEMP_TARGET_MAX = 40;
+float           TEMPERATURE_TARGET;
+float           TEMPERATURE_TARGET_LAST;
 
 unsigned long   TIMER_TS_DELAY;
 long            TIMER_TS_REST =   1000;
 unsigned long   TIMER_TE_DELAY;
 long            TIMER_TE_REST =   1500;
+unsigned long   TIMER_GL_DELAY;
+long            TIMER_GL_REST =   5000;
 
 int             TS_POSX;
 int             TS_POSY;
 
-int             TFT_ROTATION  =   3;
-
-int             SELECTED_FAN;   // 0 = OFF, 1 = 33%, 2 = 66%, 3 = FULL, 4 = AUTO
-int             SELECTED_LED;   // 0 = OFF, 1 = 25%, 2 = 50%, 3 = 75%,  4 = FULL
+int             SELECTED_FAN;   // 0 = OFF, 1 = automatic
+int             SELECTED_LED;   // 0 = OFF, 1 = 50%, 2 = 100%
 int             SELECTED_FAN_LAST;
-int             SELECTED_LED_LAST;
 
-int             POS_CIRCLE_X[] =  {72, 208};
-int             POS_CIRCLE_Y[] =  {302, 275, 248, 221, 194};
-char            *DESC_OPTIONS_FAN[] = {"OFF", "33%", "66%", "FULL", "AUTO"};
-char            *DESC_OPTIONS_LED[] = {"OFF", "25%", "50%", "75%", "FULL"};
-
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); // zwischen XP und XM den wiederstand messen und wert anpassen
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); // zwischen XP und XM den Widerstand messen und Wert anpassen
 TSPoint p;
 
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
@@ -99,15 +107,18 @@ void setup(void) {
   TEMPERATURE_LAST = 0;  
 
   SELECTED_FAN = 0;
-  SELECTED_FAN_LAST = 9;
-  SELECTED_LED = 4;
-  SELECTED_LED_LAST = 9;
+  SELECTED_FAN_LAST = 0;
+  SELECTED_LED = 2;
+
+  TEMPERATURE_TARGET = 20;
+  TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
 
   TS_POSX = 0;
   TS_POSY = 0;
   
   TIMER_TS_DELAY = millis();
   TIMER_TE_DELAY = millis();
+  TIMER_GL_DELAY = millis();
   
   bme.begin(BME_ID);
   
@@ -169,20 +180,19 @@ void setup(void) {
   tft.drawRoundRect(58, 200, 42, 36, 4, COLOR_LIGHTGREY);
   tft.setCursor(116, 224);  tft.print("ABS"); 
   tft.drawRoundRect(108, 200, 42, 36, 4, COLOR_LIGHTGREY);
+
+  // lower right areo to set the LEDs
+  tft.setCursor(168, 224);  tft.print("LEDs"); 
+
+  tft.setCursor(217, 224);  tft.print("switch mode"); 
+  tft.drawRoundRect(208, 200, 108, 36, 4, COLOR_LIGHTGREY);
   
   Serial.println("OK - PASSED!");
-  Serial.println("WELCOME to FAN & SPEED CONTROL UNIT");
+  Serial.println("WELCOME to GitLACK | v0.2");
 
+  vShowTemperatureTarget();
+  vSendUpdateToSlave();
 
-  // TEST PLACE
-  tft.setFont(&DSEG7REGULAR40);
-  tft.setTextColor(COLOR_ARSENIC);
-  tft.setCursor(196, 130);  tft.print("88.8");
-  
-  tft.setTextColor(COLOR_RED);
-  tft.setCursor(196, 130);  tft.print(";:");
-  tft.setTextColor(COLOR_ARSENIC);  tft.print(".");
-  tft.setTextColor(COLOR_RED);  tft.print(":");
 }
 
 void loop() {
@@ -198,87 +208,143 @@ void loop() {
   //pinMode(YM, OUTPUT); 
 
   if ( p.z > MINPRESSURE && p.z < MAXPRESSURE && TIMER_TS_DELAY <= millis() ) {
- 
-    TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-    TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());   
+
+    // orienation ... need if statement in combination with TFT_ROTATION
+
+    if ( TFT_ROTATION == 2 ) {
+      TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
+    } else 
+    if ( TFT_ROTATION == 3 ) {
+      TS_POSX = map(p.y, TS_MINX, TS_MAXX, 0, tft.width());
+      TS_POSY = map(p.x, TS_MINY, TS_MAXY, 0, tft.height());
+    }
+
+    //Serial.print("X abs = \t");Serial.print(p.y);Serial.print("\t Y abs = \t");Serial.println(p.x);
+    Serial.print("X rel = \t");Serial.print(TS_POSX);Serial.print("\t Y rel = \t");Serial.println(TS_POSY);
+    Serial.println("----");
 
     TIMER_TS_DELAY = millis() + TIMER_TS_REST;
-    
-  }
 
-  // now the long if statement of the pressed position
-/*
-  if  (( TS_POSX >= 10 ) && ( TS_POSX <= 90 ) && ( TS_POSY >= 182 ) && ( TS_POSY <= 204 )) {
-    SELECTED_FAN = 4;
-  }
+    // now the long if statement of the pressed position
+    // target temperature up
+    if  (( TS_POSX >= 142 ) && ( TS_POSY >=  62 ) && ( TS_POSX <= 178 ) && ( TS_POSY <=  98 )) {
 
-  if  (( TS_POSX >= 10 ) && ( TS_POSX <= 90 ) && ( TS_POSY >= 209 ) && ( TS_POSY <= 233 )) {
-    SELECTED_FAN = 3;
-  }
-
-  if  (( TS_POSX >= 10 ) && ( TS_POSX <= 90 ) && ( TS_POSY >= 236 ) && ( TS_POSY <= 260 )) {
-    SELECTED_FAN = 2;
-  }
-
-  if  (( TS_POSX >= 10 ) && ( TS_POSX <= 90 ) && ( TS_POSY >= 263 ) && ( TS_POSY <= 287 )) {
-    SELECTED_FAN = 1;
-  }      
+      if ( SELECTED_FAN == 0 ) {
+        TEMPERATURE_TARGET = TEMPERATURE_TARGET_LAST;
+        SELECTED_FAN = 1;
+      } else 
+      if ( SELECTED_FAN == 1 ) { 
+        TEMPERATURE_TARGET ++;
+        if ( TEMPERATURE_TARGET > TEMP_TARGET_MAX ) {
+          TEMPERATURE_TARGET = TEMP_TARGET_MAX;
+          TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
+        }
+        SELECTED_FAN = 1;
+      }
+      
+      vShowTemperatureTarget();
+      vSendUpdateToSlave();
+      
+    } else
   
-  if  (( TS_POSX >= 10 ) && ( TS_POSX <= 90 ) && ( TS_POSY >= 290 ) && ( TS_POSY <= 314 )) {
-    SELECTED_FAN = 0;
-  }
+    // target temperature down
+    if  (( TS_POSX >= 142 ) && ( TS_POSY >= 106 ) && ( TS_POSX <= 178 ) && ( TS_POSY <= 142 )) {
+      
+      if ( SELECTED_FAN == 0 ) {
+        TEMPERATURE_TARGET = TEMPERATURE_TARGET_LAST;
+        SELECTED_FAN = 1;
+      } else 
+      if ( SELECTED_FAN == 1 ) { 
+        TEMPERATURE_TARGET --;
+        if ( TEMPERATURE_TARGET < TEMP_TARGET_MIN ) {
+          TEMPERATURE_TARGET = TEMP_TARGET_MIN;
+          TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
+        }
+        SELECTED_FAN = 1;
+      }      
+      vShowTemperatureTarget();
+      vSendUpdateToSlave();
+      
+    } else
   
-  if  (( TS_POSX >= 150 ) && ( TS_POSX <= 230 ) && ( TS_POSY >= 182 ) && ( TS_POSY <= 204 )) {
-    SELECTED_LED = 4;
-  }
+    // fan off
+    if  (( TS_POSX >= 142 ) && ( TS_POSY >= 150 ) && ( TS_POSX <= 178 ) && ( TS_POSY <= 186 )) {
 
-  if  (( TS_POSX >= 150 ) && ( TS_POSX <= 230 ) && ( TS_POSY >= 209 ) && ( TS_POSY <= 233 )) {
-    SELECTED_LED = 3;
-  }
-
-  if  (( TS_POSX >= 150 ) && ( TS_POSX <= 230 ) && ( TS_POSY >= 236 ) && ( TS_POSY <= 260 )) {
-    SELECTED_LED = 2;
-  }
-
-  if  (( TS_POSX >= 150 ) && ( TS_POSX <= 230 ) && ( TS_POSY >= 263 ) && ( TS_POSY <= 287 )) {
-    SELECTED_LED = 1;
-  }      
+      SELECTED_FAN = 0;
+      
+      vShowTemperatureTarget();
+      vSendUpdateToSlave();
+      
+    } else
   
-  if  (( TS_POSX >= 150 ) && ( TS_POSX <= 230 ) && ( TS_POSY >= 290 ) && ( TS_POSY <= 314 )) {
-    SELECTED_LED = 0;
-  }*/
+    // preset PLA
+    if  (( TS_POSX >=  58 ) && ( TS_POSY >= 200 ) && ( TS_POSX <= 100 ) && ( TS_POSY <= 236 )) {
+
+      SELECTED_FAN = 1;
+      TEMPERATURE_TARGET = TEMP_PRESET_PLA;
+      TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
+      
+      vShowTemperatureTarget();
+      vSendUpdateToSlave();
+      
+    } else 
+  
+    // preset ABS
+    if  (( TS_POSX >= 108 ) && ( TS_POSY >= 200 ) && ( TS_POSX <= 150 ) && ( TS_POSY <= 236 )) {
+
+      SELECTED_FAN = 1;
+      TEMPERATURE_TARGET = TEMP_PRESET_ABS;
+      TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
+      
+      vShowTemperatureTarget();
+      vSendUpdateToSlave();
+      
+    } else
+  
+    // switch LED
+    if  (( TS_POSX >= 208 ) && ( TS_POSY >= 200 ) && ( TS_POSX <= 316 ) && ( TS_POSY <= 236 )) {
+      
+      SELECTED_LED ++;
+  
+      if ( SELECTED_LED >= 3 ) {
+        SELECTED_LED = 0;
+      }
+
+      vSendUpdateToSlave();
+      
+    }
+
+    // reset touchscreen positions
+    TS_POSX = 0;  TS_POSY = 0;
+
+  }
 
   if ( TIMER_TE_DELAY <= millis() ) {
-    vShowTemperature();
+    vShowTemperatureCurrent();
 
-    if ( SELECTED_FAN == 4 ) {
-      // send to slave
-      Wire.beginTransmission(2);
-      //Wire.write('T');
-      Wire.write((byte) 0);
-      //Wire.write('P');
-      Wire.write((byte) 4);
-      //Wire.write('C');
-      Wire.write((byte) TEMPERATURE_CURRENT);
-      Wire.endTransmission();      
+    if ( SELECTED_FAN == 1 ) {
+      vSendUpdateToSlave();
     }
     
     TIMER_TE_DELAY = millis() + TIMER_TE_REST;
   }
-  
-  //vChangeButtons(SELECTED_FAN, SELECTED_FAN_LAST, 0);
-  //vChangeButtons(SELECTED_LED, SELECTED_LED_LAST, 1);
+
+  if ( TIMER_GL_DELAY <= millis() ) {
+    vSendUpdateToSlave;
+    TIMER_GL_DELAY = millis() + TIMER_GL_REST;
+  }
 
 }
 
-void vShowTemperature() {
+void vShowTemperatureCurrent() {
     
   TEMPERATURE_CURRENT = bme.readTemperature();
   TEMPERATURE_CURRENT = TEMPERATURE_CURRENT * 10;
   TEMPERATURE_CURRENT = (int) TEMPERATURE_CURRENT;
   TEMPERATURE_CURRENT = TEMPERATURE_CURRENT / 10;
 
-  if ( TEMPERATURE_CURRENT != TEMPERATURE_LAST) {
+  if ( TEMPERATURE_CURRENT != TEMPERATURE_LAST ) {
 
     tft.setTextColor(COLOR_ARSENIC);
     tft.setCursor(6, 130);  tft.print("88.8");
@@ -303,35 +369,63 @@ void vShowTemperature() {
     
 }
 
+void vShowTemperatureTarget() {
 
-void vChangeButtons(int SELECTED_OPTION, int SELECTED_OPTION_LAST, int SELECTED_TYPE) {
-
-  if ( SELECTED_OPTION != SELECTED_OPTION_LAST ) {
-
-    // reset last selected button
-
-    if ( SELECTED_TYPE == 0 ) {
-      tft.fillCircle(POS_CIRCLE_X[SELECTED_TYPE], POS_CIRCLE_Y[SELECTED_FAN_LAST], 7, COLOR_BLACK);
-      SELECTED_FAN_LAST = SELECTED_OPTION;
-    } else 
+  if ( SELECTED_FAN == 0 ) {
     
-    if ( SELECTED_TYPE == 1 ) {
-      tft.fillCircle(POS_CIRCLE_X[SELECTED_TYPE], POS_CIRCLE_Y[SELECTED_LED_LAST], 7, COLOR_BLACK);
-      SELECTED_LED_LAST = SELECTED_OPTION;
-    }    
+    tft.setFont(&DSEG7REGULAR40);
+    tft.setTextColor(COLOR_ARSENIC);
+    tft.setCursor(196, 130);            tft.print("88.8");    
+  
+    tft.setTextColor(COLOR_RED);
+    tft.setCursor(196, 130);          tft.print(";:");
+    tft.setTextColor(COLOR_ARSENIC);  tft.print(".");
+    tft.setTextColor(COLOR_RED);      tft.print(":");
 
-    // fill the current selection
-    tft.fillCircle(POS_CIRCLE_X[SELECTED_TYPE], POS_CIRCLE_Y[SELECTED_OPTION], 7, COLOR_LIGHTGREY);
+    //SELECTED_FAN_LAST = SELECTED_FAN;
+    
+  } else
+  if ( SELECTED_FAN == 1 ) {
+    
+    tft.setFont(&DSEG7REGULAR40);
+    tft.setTextColor(COLOR_ARSENIC);
+    tft.setCursor(196, 130);            tft.print("88.8");    
+    
+    tft.setTextColor(COLOR_RED);
+    tft.setCursor(196, 130);          tft.print(TEMPERATURE_TARGET, 1);
+  } 
+  
+  TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
+  //SELECTED_FAN_LAST = SELECTED_FAN;
+  
+}
 
-    // send to slave
-    Wire.beginTransmission(2);
-    //Wire.write('T');
-    Wire.write((byte) SELECTED_TYPE);
-    //Wire.write('P');
-    Wire.write((byte) SELECTED_OPTION);
-    //Wire.write('C');
-    Wire.write((byte) TEMPERATURE_CURRENT);
-    Wire.endTransmission();
-  }
+void vSendUpdateToSlave() {
+
+/*
+  Serial.print("Time: \t");
+  Serial.print(millis());
+  Serial.print("s\tSelected LED:\t");
+  Serial.print(SELECTED_LED);
+  Serial.print("\tSelected FAN:\t");
+  Serial.print(SELECTED_FAN);
+  Serial.print("\tCURRENT temperature:\t");
+  Serial.print(TEMPERATURE_CURRENT);
+  Serial.print("\tTARGET temperature:\t");
+  Serial.println(TEMPERATURE_TARGET);
+*/
+
+  // send to slave
+  Wire.beginTransmission(2);
+  // send LED value
+  Wire.write((byte) SELECTED_LED);
+  // send fan option
+  Wire.write((byte) SELECTED_FAN);
+  // send current temperature
+  Wire.write((byte) TEMPERATURE_CURRENT);
+  // send target temperature
+  Wire.write((byte) TEMPERATURE_TARGET);
+  Wire.endTransmission();
+  
 }
 
