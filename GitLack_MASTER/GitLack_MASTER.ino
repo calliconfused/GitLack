@@ -82,6 +82,9 @@ long            TIMER_TE_REST =   1500;
 unsigned long   TIMER_GL_DELAY;
 long            TIMER_GL_REST =   5000;
 
+unsigned long   TIMER_MENU_DELAY;
+long            TIMER_MENU_REST = 3600000;
+
 int             TS_POSX;
 int             TS_POSY;
 
@@ -119,6 +122,7 @@ void setup(void) {
   TIMER_TS_DELAY = millis();
   TIMER_TE_DELAY = millis();
   TIMER_GL_DELAY = millis();
+  TIMER_MENU_DELAY = millis() + TIMER_MENU_REST;
   
   bme.begin(BME_ID);
   
@@ -126,71 +130,10 @@ void setup(void) {
   tft.begin(LCD_ID);
   
   tft.setRotation(TFT_ROTATION);
-  tft.fillScreen(COLOR_BLACK);
   
   pinMode(13, OUTPUT);
   
-  tft.setTextColor(COLOR_LIGHTGREY);
-  tft.setFont(&Open_Sans_Condensed_Bold_16);
-
-  // Überschrift
-  tft.setCursor(112, 20);   tft.print("GitLACK | v0.2");
-
-  // grid
-  tft.drawFastHLine(0, 31, 320, COLOR_DARKGREY);
-  tft.drawFastHLine(0, 192, 320, COLOR_DARKGREY);
-  
-  tft.drawFastVLine(130, 31, 161, COLOR_DARKGREY);
-  tft.drawFastVLine(190, 31, 161, COLOR_DARKGREY);
-  tft.drawFastVLine(160, 192, 48, COLOR_DARKGREY);
-
-  // left area of current temperature
-  tft.drawCircle(113, 114, 1, COLOR_LIGHTGREY);
-  tft.drawCircle(113, 114, 2, COLOR_LIGHTGREY);
-
-  tft.setCursor(116, 128);  tft.print("C");  
-  tft.setCursor(39, 50);   tft.print("current");
-  tft.setCursor(22, 68);   tft.print("temperature");
-
-  // right area of target temperature
-  tft.drawCircle(303, 114, 1, COLOR_LIGHTGREY);
-  tft.drawCircle(303, 114, 2, COLOR_LIGHTGREY);
-
-  tft.setCursor(306, 128);  tft.print("C");  
-  tft.setCursor(233, 50);   tft.print("target");
-  tft.setCursor(216, 68);   tft.print("temperature");
-
-  // middle area to set temperature
-  tft.setCursor(150, 50);  tft.print("SET"); 
-  
-  tft.drawBitmap(144, 64, SYMBOL_arrowup, 32, 32, COLOR_LIGHTGREY);
-  tft.drawRoundRect(142, 62, 36, 36, 4, COLOR_LIGHTGREY);
-  
-  tft.drawBitmap(144, 108, SYMBOL_arrowdown, 32, 32, COLOR_LIGHTGREY);
-  tft.drawRoundRect(142, 106, 36, 36, 4, COLOR_LIGHTGREY);
-  
-  tft.drawBitmap(144, 152, SYMBOL_switchoff, 32, 32, COLOR_LIGHTGREY);
-  tft.drawRoundRect(142, 150, 36, 36, 4, COLOR_LIGHTGREY);
-
-  // lower left area to set the preset
-  tft.setCursor(4, 212);  tft.print("preset"); 
-  tft.setCursor(8, 232);  tft.print("temp");
-
-  tft.setCursor(66, 224);  tft.print("PLA"); 
-  tft.drawRoundRect(58, 200, 42, 36, 4, COLOR_LIGHTGREY);
-  tft.setCursor(116, 224);  tft.print("ABS"); 
-  tft.drawRoundRect(108, 200, 42, 36, 4, COLOR_LIGHTGREY);
-
-  // lower right areo to set the LEDs
-  tft.setCursor(168, 224);  tft.print("LEDs"); 
-
-  tft.setCursor(217, 224);  tft.print("switch mode"); 
-  tft.drawRoundRect(208, 200, 108, 36, 4, COLOR_LIGHTGREY);
-  
-  Serial.println("OK - PASSED!");
-  Serial.println("WELCOME to GitLACK | v0.2");
-
-  vShowTemperatureTarget();
+  vDrawMenu();
   vSendUpdateToSlave();
 
 }
@@ -335,6 +278,11 @@ void loop() {
     TIMER_GL_DELAY = millis() + TIMER_GL_REST;
   }
 
+  if ( TIMER_MENU_DELAY <= millis() ) {
+    vDrawMenu();
+    TIMER_MENU_DELAY = millis() + TIMER_MENU_REST;
+  }
+
 }
 
 void vShowTemperatureCurrent() {
@@ -427,5 +375,75 @@ void vSendUpdateToSlave() {
   Wire.write((byte) TEMPERATURE_TARGET);
   Wire.endTransmission();
   
+}
+
+void vDrawMenu() {
+
+  tft.fillScreen(COLOR_BLACK);
+  
+  tft.setTextColor(COLOR_LIGHTGREY);
+  tft.setFont(&Open_Sans_Condensed_Bold_16);
+
+  // Überschrift
+  tft.setCursor(112, 20);   tft.print("GitLACK | v0.3");
+
+  // grid
+  tft.drawFastHLine(0, 31, 320, COLOR_DARKGREY);
+  tft.drawFastHLine(0, 192, 320, COLOR_DARKGREY);
+  
+  tft.drawFastVLine(130, 31, 161, COLOR_DARKGREY);
+  tft.drawFastVLine(190, 31, 161, COLOR_DARKGREY);
+  tft.drawFastVLine(160, 192, 48, COLOR_DARKGREY);
+
+  // left area of current temperature
+  tft.drawCircle(113, 114, 1, COLOR_LIGHTGREY);
+  tft.drawCircle(113, 114, 2, COLOR_LIGHTGREY);
+
+  tft.setCursor(116, 128);  tft.print("C");  
+  tft.setCursor(39, 50);   tft.print("current");
+  tft.setCursor(22, 68);   tft.print("temperature");
+
+  // right area of target temperature
+  tft.drawCircle(303, 114, 1, COLOR_LIGHTGREY);
+  tft.drawCircle(303, 114, 2, COLOR_LIGHTGREY);
+
+  tft.setCursor(306, 128);  tft.print("C");  
+  tft.setCursor(233, 50);   tft.print("target");
+  tft.setCursor(216, 68);   tft.print("temperature");
+
+  // middle area to set temperature
+  tft.setCursor(150, 50);  tft.print("SET"); 
+  
+  tft.drawBitmap(144, 64, SYMBOL_arrowup, 32, 32, COLOR_LIGHTGREY);
+  tft.drawRoundRect(142, 62, 36, 36, 4, COLOR_LIGHTGREY);
+  
+  tft.drawBitmap(144, 108, SYMBOL_arrowdown, 32, 32, COLOR_LIGHTGREY);
+  tft.drawRoundRect(142, 106, 36, 36, 4, COLOR_LIGHTGREY);
+  
+  tft.drawBitmap(144, 152, SYMBOL_switchoff, 32, 32, COLOR_LIGHTGREY);
+  tft.drawRoundRect(142, 150, 36, 36, 4, COLOR_LIGHTGREY);
+
+  // lower left area to set the preset
+  tft.setCursor(4, 212);  tft.print("preset"); 
+  tft.setCursor(8, 232);  tft.print("temp");
+
+  tft.setCursor(66, 224);  tft.print("PLA"); 
+  tft.drawRoundRect(58, 200, 42, 36, 4, COLOR_LIGHTGREY);
+  tft.setCursor(116, 224);  tft.print("ABS"); 
+  tft.drawRoundRect(108, 200, 42, 36, 4, COLOR_LIGHTGREY);
+
+  // lower right areo to set the LEDs
+  tft.setCursor(168, 224);  tft.print("LEDs"); 
+
+  tft.setCursor(217, 224);  tft.print("switch mode"); 
+  tft.drawRoundRect(208, 200, 108, 36, 4, COLOR_LIGHTGREY);
+  
+  Serial.println("OK - PASSED!");
+  Serial.println("WELCOME to GitLACK | v0.3");
+
+  TEMPERATURE_LAST = 0;
+  vShowTemperatureCurrent();
+  vShowTemperatureTarget();
+    
 }
 
