@@ -1,6 +1,8 @@
 # GitLack renamed from FanController
 This is a simple project of an enclosure for a 3D printer which controls the fan speed and some lights. But why the name GitLack? It's a German acronym and it means "Gehäuse Innen Temperatur & LED An/Aus Controller Krempel". Word by word translated in English it mean "Enclosure Inside Temperature & LED On/Off Controller Junk". On the other hand, the first syllable Git I want to share my project with you and I was stupid to built direct the right cabinet for my 3D printer. The last syllable for the name which I made the enclosure.
 
+![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200127_221329.jpg)
+
 Why this project?
 
 So, during my experience with 3D printers I got on Xmas 2019 my new Anycubic 3D Mega. My old CTC printer got some issues during the time but more about this on a later stage. For the old printer I built a mixture of some cabinets out from the bargain basement of the well known Swedish furniture manufacturer. Cheap and already mounted, price was round about of 30 Euro with doors plus 4 LED strips (SMD 5050 with a very easy controller). The problem was that the alignment of the angle wasn't 90 degrees and if you put some weights on top of the cabinet and ... okay, the doors was not really parallel opened.
