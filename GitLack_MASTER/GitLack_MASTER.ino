@@ -40,9 +40,6 @@ float           TEMP_PRESET_ABS = 35.0;
 
 int             TFT_ROTATION  =   3;
 
-
-
-
 #define         COLOR_BLACK       0x0000
 #define         COLOR_NAVY        0x000F
 #define         COLOR_DARKGREEN   0x03E0
@@ -294,6 +291,7 @@ void vShowTemperatureCurrent() {
 
   if ( TEMPERATURE_CURRENT != TEMPERATURE_LAST ) {
 
+    tft.setFont(&DSEG7REGULAR40);
     tft.setTextColor(COLOR_ARSENIC);
     tft.setCursor(6, 130);  tft.print("88.8");
     
@@ -385,7 +383,7 @@ void vDrawMenu() {
   tft.setFont(&Open_Sans_Condensed_Bold_16);
 
   // Überschrift
-  tft.setCursor(112, 20);   tft.print("GitLACK | v0.3");
+  tft.setCursor(112, 20);   tft.print("GitLACK | v0.4");
 
   // grid
   tft.drawFastHLine(0, 31, 320, COLOR_DARKGREY);
