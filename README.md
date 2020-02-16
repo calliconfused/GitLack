@@ -15,7 +15,7 @@ For the controller I wanted to use some of the parts what I already had at home 
 
 The MAIN problem of material
 
-During my research how to handle a automatically temperature inside I found a big issue about the material handle. So it's really a advantage if you cool the inside if you print with PLA and if you work with ABS then you will promote warping. This is still in development to add in the program an adjustment for each material and it's own temperature range. The other problem what I have is I put all Arduinos, the Raspberry PI in the closed cabinet not to waste area outside of the enclosure. Just the 12V transformer is under the base plate. The planning is still in progress.
+During my research how to handle an automatically temperature inside I found a big issue about the material handle. So it's really an advantage if you cool the inside if you print with PLA and if you work with ABS then you will promote warping. This is still in development to add in the program an adjustment for each material and it's own temperature range. The other problem what I have is I put all Arduinos, the Raspberry PI in the closed cabinet not to waste area outside of the enclosure. Just the 12V transformer is under the base plate. The planning is still in progress.
 
 The other MAIN problem of the Arduino UNO
 
