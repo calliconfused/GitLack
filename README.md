@@ -15,6 +15,8 @@ For the controller I wanted to use some of the parts what I already had at home 
 
 ![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200129_192654.jpg)
 
+![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200129_192650.jpg)
+
 The MAIN problem of material
 
 During my research how to handle an automatically temperature inside I found a big issue about the material handle. So it's really an advantage if you cool the inside if you print with PLA and if you work with ABS then you will promote warping. This is still in development to add in the program an adjustment for each material and it's own temperature range. The other problem what I have is I put all Arduinos, the Raspberry PI in the closed cabinet not to waste area outside of the enclosure. Just the 12V transformer is under the base plate. The planning is still in progress.
@@ -25,5 +27,9 @@ You see: 2.8" TFT touchscreen display and an Arduino Uno is a nightmare of save 
 Next problem: the touchscreen will took a lot of pins and all PWM pins are blocked for that. Okay, the card reader is not really necessary for my project but maybe for further updates. We will see.
 Someone will say now: hey, why do you don't order a MEGA 2560 clone or similar with more space, speed and pin?
 Yeah, you're correct! That's an easier way but my spirit is to use that parts which I already have at home. That's my personal milestone to start with I2C and put the second Arduino in the circuit (in my case the Nano). The master will collect all values from the user, pardon, from the pressed touchscreen and from the temperature sensor and give the values to the slave which will handle the logic of the fan speed and control the LEDs.
+
+![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200127_221432.jpg)
+
+![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200127_221713.jpg)
 
 Okay ... currently from my side and I will give you in the next days/weeks some updates! Cheers!
