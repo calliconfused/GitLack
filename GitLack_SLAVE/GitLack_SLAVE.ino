@@ -100,7 +100,7 @@ void loop() {
       analogWrite(FAN_CONTROL, LOWEST_FAN_SPEED);
     } else
     if ( TEMPERATURE_TARGET <= TEMPERATURE_CURRENT ) {
-      TEMPERATURE_AUTO_MIN = TEMPERATURE_TARGET;
+      TEMPERATURE_AUTO_MIN = TEMPERATURE_TARGET - 5;
       FADE = map(TEMPERATURE_CURRENT, TEMPERATURE_AUTO_MIN, TEMPERATURE_AUTO_MAX, LOWEST_FAN_SPEED, 255);
       analogWrite(FAN_CONTROL, FADE);
     }
@@ -113,7 +113,7 @@ void loop() {
       FADE = 0;
     } else
     if ( SELECTED_LED == 1 ) {
-      FADE = 127;
+      FADE = 88;
     } else
     if ( SELECTED_LED == 2 ) {
       FADE = 255;
