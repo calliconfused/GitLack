@@ -1,5 +1,10 @@
-// Created by http://oleddisplay.squix.ch/ Consider a donation
-// In case of problems make sure that you are using the font file with the correct version!
+/*
+ * This is a font for seven segment digits - size 40 px
+ * 
+ * Created by http://oleddisplay.squix.ch/ Consider a donation
+ * In case of problems make sure that you are using the font file with the correct version!
+ */ 
+
 const uint8_t DSEG7REGULAR40Bitmaps[] PROGMEM = {
 
   // Bitmap Data:

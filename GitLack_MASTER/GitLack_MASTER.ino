@@ -2,94 +2,90 @@
 #include        <Wire.h>
 #include        <TouchScreen.h>
 
-#include        <Adafruit_GFX.h>    // Core graphics library
-#include        <Adafruit_TFTLCD.h> // Hardware-specific library
+#include        <Adafruit_GFX.h>                // Core graphics library
+#include        <Adafruit_TFTLCD.h>             // Hardware-specific library
 #include        "OpenSansCondensed16pt.h"
 #include        "DSEG7REGULAR40.h"
 #include        "bitmaps.h"
 
 #include        <Adafruit_BME280.h>
 
+// now a long statement with some fixed values
+// here the display and touchscreen values
 
+#define         YP                A3            // must be an analog pin, use "An" notation!
+#define         XM                A2            // must be an analog pin, use "An" notation!
+#define         YM                9             // can be a digital pin
+#define         XP                8             // can be a digital pin
 
+#define         LCD_CS            A3            // Chip Select goes to Analog 3
+#define         LCD_CD            A2            // Command/Data goes to Analog 2
+#define         LCD_WR            A1            // LCD Write goes to Analog 1
+#define         LCD_RD            A0            // LCD Read goes to Analog 0
+#define         LCD_RESET         1             // Can alternately just connect to Arduino's reset pin -> it's neccessary if you need the SDA and SCL pins
 
-#define         YP                A3  // must be an analog pin, use "An" notation!
-#define         XM                A2  // must be an analog pin, use "An" notation!
-#define         YM                9   // can be a digital pin
-#define         XP                8   // can be a digital pin
-
-#define         LCD_CS            A3 // Chip Select goes to Analog 3
-#define         LCD_CD            A2 // Command/Data goes to Analog 2
-#define         LCD_WR            A1 // LCD Write goes to Analog 1
-#define         LCD_RD            A0 // LCD Read goes to Analog 0
-#define         LCD_RESET         1 // Can alternately just connect to Arduino's reset pin
-
-#define         TS_MINX           120
-#define         TS_MAXX           900
-#define         TS_MINY           70
-#define         TS_MAXY           920
-
-uint16_t        LCD_ID =          0x9341; //ILI9341 LCD driver
-uint16_t        BME_ID =          0x76;
-
-float           TEMP_TARGET_MIN = 18.0;
-float           TEMP_TARGET_MAX = 40.0;
-
-float           TEMP_PRESET_PLA = 25.0;
-float           TEMP_PRESET_ABS = 35.0;
-
-int             TFT_ROTATION  =   3;
-
-#define         COLOR_BLACK       0x0000
-#define         COLOR_NAVY        0x000F
-#define         COLOR_DARKGREEN   0x03E0
-#define         COLOR_DARKCYAN    0x03EF
-#define         COLOR_MAROON      0x7800
-#define         COLOR_PURPLE      0x780F
-#define         COLOR_OLIVE       0x7BE0
-#define         COLOR_LIGHTGREY   0xC618
-#define         COLOR_DARKGREY    0x7BEF
-#define         COLOR_BLUE        0x001F
-#define         COLOR_GREEN       0x07E0
-#define         COLOR_CYAN        0x07FF
-#define         COLOR_RED         0xF800
-#define         COLOR_MAGENTA     0xF81F
-#define         COLOR_YELLOW      0xFFE0
-#define         COLOR_WHITE       0xFFFF
-#define         COLOR_ORANGE      0xFD20
-#define         COLOR_GREENYELLOW 0xAFE5
-#define         COLOR_PINK        0xF81F
-#define         COLOR_ARSENIC     0x2965
+#define         TS_MINX           120           // touchscreen alternative minimum value in X direction
+#define         TS_MAXX           900           // touchscreen alternative minimum value in X direction
+#define         TS_MINY           70            // touchscreen alternative minimum value in X direction
+#define         TS_MAXY           920           // touchscreen alternative minimum value in X direction
 
 #define         MINPRESSURE       10
 #define         MAXPRESSURE       1000
 
-#define         NODE_MAX_NUMBERS  5
+uint16_t        LCD_ID =          0x9341;       // ILI9341 LCD driver, please read your documentation! I don't use all other drivers otherwise the space on the Uno will overrun
 
-float           TEMPERATURE_CURRENT;
-float           TEMPERATURE_LAST;
+float           TEMP_TARGET_MIN = 18.0;         // lowerst adjustable temperature
+float           TEMP_TARGET_MAX = 40.0;         // highest adjustable temperature
 
-float           TEMPERATURE_TARGET;
-float           TEMPERATURE_TARGET_LAST;
+float           TEMP_PRESET_PLA = 25.0;         // preset for PLA filament
+float           TEMP_PRESET_ABS = 35.0;         // preset for ABS filament
 
-unsigned long   TIMER_TS_DELAY;
-long            TIMER_TS_REST =   1000;
-unsigned long   TIMER_TE_DELAY;
-long            TIMER_TE_REST =   1500;
-unsigned long   TIMER_GL_DELAY;
-long            TIMER_GL_REST =   5000;
-
-unsigned long   TIMER_MENU_DELAY;
-long            TIMER_MENU_REST = 3600000;
+int             TFT_ROTATION  =   3;            // orientation of display
 
 int             TS_POSX;
 int             TS_POSY;
 
-int             SELECTED_FAN;   // 0 = OFF, 1 = automatic
-int             SELECTED_LED;   // 0 = OFF, 1 = 50%, 2 = 100%
-int             SELECTED_FAN_LAST;
+// some color definition
 
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); // zwischen XP und XM den Widerstand messen und Wert anpassen
+#define         COLOR_BLACK       0x0000    
+#define         COLOR_LIGHTGREY   0xC618
+#define         COLOR_DARKGREY    0x7BEF
+#define         COLOR_RED         0xF800
+#define         COLOR_YELLOW      0xFFE0
+#define         COLOR_ORANGE      0xFD20
+#define         COLOR_GREENYELLOW 0xAFE5
+#define         COLOR_ARSENIC     0x2965
+
+// now the GY-BME280 values
+
+uint16_t        BME_ID =          0x76;         // BME ID
+
+// and some fixed values as general setup
+
+int             SELECTED_FAN;                     // 0 = OFF, 1 = automatic
+int             SELECTED_LED;                     // 0 = OFF, 1 = 50%, 2 = 100%
+int             SELECTED_FAN_LAST;                // save the last selected value for the fan
+
+float           TEMPERATURE_CURRENT;              // save the current temperature
+float           TEMPERATURE_LAST;                 // save the last temperature
+
+float           TEMPERATURE_TARGET;               // save the target temperature
+float           TEMPERATURE_TARGET_LAST;          // save the last target ... ? ... temperature
+
+// instead of the delay command which won't work in this sketch I prefer to use the millis command together with an if statement
+
+unsigned long   TIMER_TS_DELAY;                   
+long            TIMER_TS_REST =   1000;           // count in milli seconds
+unsigned long   TIMER_TE_DELAY;
+long            TIMER_TE_REST =   1500;           // count in milli seconds
+unsigned long   TIMER_GL_DELAY;
+long            TIMER_GL_REST =   5000;           // count in milli seconds
+
+unsigned long   TIMER_MENU_DELAY;
+long            TIMER_MENU_REST = 3600000;        // count in milli seconds - a general refresh of the screen
+
+
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300); // mesaure the resistance between XP and XM and change the value
 TSPoint p;
 
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
@@ -130,8 +126,8 @@ void setup(void) {
   
   pinMode(13, OUTPUT);
   
-  vDrawMenu();
-  vSendUpdateToSlave();
+  vDrawMenu();                // draw grid and all the other nice stuff
+  vSendUpdateToSlave();       // send an update to the slave device
 
 }
 
@@ -142,27 +138,45 @@ void loop() {
   digitalWrite(13, LOW); 
 
   // if sharing pins, you'll need to fix the directions of the touchscreen pins
-  //pinMode(XP, OUTPUT);
-  pinMode(XM, OUTPUT);
-  pinMode(YP, OUTPUT);
-  //pinMode(YM, OUTPUT); 
+  // I don't finished this if statement with option 1, 2 and 4, need support!
+  
+  if ( TFT_ROTATION == 1) {         // needs to be adjust
+    //pinMode(XP, OUTPUT);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+    //pinMode(YM, OUTPUT); 
+  } else if ( TFT_ROTATION == 2) {  // needs to be adjust
+    //pinMode(XP, OUTPUT);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+    //pinMode(YM, OUTPUT); 
+  } else if ( TFT_ROTATION == 3) {  // THAT WORKS!
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+  } else if ( TFT_ROTATION == 4) {  // needs to be adjust
+    //pinMode(XP, OUTPUT);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+    //pinMode(YM, OUTPUT); 
+  }
+
 
   if ( p.z > MINPRESSURE && p.z < MAXPRESSURE && TIMER_TS_DELAY <= millis() ) {
 
     // orienation ... need if statement in combination with TFT_ROTATION
-
-    if ( TFT_ROTATION == 2 ) {
+    if ( TFT_ROTATION == 1 ) {          // needs to be adjust
       TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
       TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
-    } else 
-    if ( TFT_ROTATION == 3 ) {
+    } else if ( TFT_ROTATION == 2 ) {   // THAT WORKS!
+      TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
+    } else if ( TFT_ROTATION == 3 ) {   // THAT WORKS!
       TS_POSX = map(p.y, TS_MINX, TS_MAXX, 0, tft.width());
       TS_POSY = map(p.x, TS_MINY, TS_MAXY, 0, tft.height());
+    } else if ( TFT_ROTATION == 4 ) {   // needs to be adjust
+      TS_POSX = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      TS_POSY = map(p.y, TS_MINY, TS_MAXY, 0, tft.height());
     }
-
-    //Serial.print("X abs = \t");Serial.print(p.y);Serial.print("\t Y abs = \t");Serial.println(p.x);
-    Serial.print("X rel = \t");Serial.print(TS_POSX);Serial.print("\t Y rel = \t");Serial.println(TS_POSY);
-    Serial.println("----");
 
     TIMER_TS_DELAY = millis() + TIMER_TS_REST;
 
@@ -327,8 +341,6 @@ void vShowTemperatureTarget() {
     tft.setCursor(196, 130);          tft.print(";:");
     tft.setTextColor(COLOR_ARSENIC);  tft.print(".");
     tft.setTextColor(COLOR_RED);      tft.print(":");
-
-    //SELECTED_FAN_LAST = SELECTED_FAN;
     
   } else
   if ( SELECTED_FAN == 1 ) {
@@ -342,24 +354,10 @@ void vShowTemperatureTarget() {
   } 
   
   TEMPERATURE_TARGET_LAST = TEMPERATURE_TARGET;
-  //SELECTED_FAN_LAST = SELECTED_FAN;
   
 }
 
 void vSendUpdateToSlave() {
-
-/*
-  Serial.print("Time: \t");
-  Serial.print(millis());
-  Serial.print("s\tSelected LED:\t");
-  Serial.print(SELECTED_LED);
-  Serial.print("\tSelected FAN:\t");
-  Serial.print(SELECTED_FAN);
-  Serial.print("\tCURRENT temperature:\t");
-  Serial.print(TEMPERATURE_CURRENT);
-  Serial.print("\tTARGET temperature:\t");
-  Serial.println(TEMPERATURE_TARGET);
-*/
 
   // send to slave
   Wire.beginTransmission(2);
@@ -382,7 +380,7 @@ void vDrawMenu() {
   tft.setTextColor(COLOR_LIGHTGREY);
   tft.setFont(&Open_Sans_Condensed_Bold_16);
 
-  // Überschrift
+  // head
   tft.setCursor(112, 20);   tft.print("GitLACK | v0.4");
 
   // grid
@@ -398,8 +396,8 @@ void vDrawMenu() {
   tft.drawCircle(113, 114, 2, COLOR_LIGHTGREY);
 
   tft.setCursor(116, 128);  tft.print("C");  
-  tft.setCursor(39, 50);   tft.print("current");
-  tft.setCursor(22, 68);   tft.print("temperature");
+  tft.setCursor(39, 50);    tft.print("current");
+  tft.setCursor(22, 68);    tft.print("temperature");
 
   // right area of target temperature
   tft.drawCircle(303, 114, 1, COLOR_LIGHTGREY);
@@ -430,18 +428,17 @@ void vDrawMenu() {
   tft.setCursor(116, 224);  tft.print("ABS"); 
   tft.drawRoundRect(108, 200, 42, 36, 4, COLOR_LIGHTGREY);
 
-  // lower right areo to set the LEDs
+  // lower right area to set the LEDs
   tft.setCursor(168, 224);  tft.print("LEDs"); 
 
   tft.setCursor(217, 224);  tft.print("switch mode"); 
   tft.drawRoundRect(208, 200, 108, 36, 4, COLOR_LIGHTGREY);
   
   Serial.println("OK - PASSED!");
-  Serial.println("WELCOME to GitLACK | v0.3");
+  Serial.println("WELCOME to GitLACK | v0.4");
 
   TEMPERATURE_LAST = 0;
   vShowTemperatureCurrent();
   vShowTemperatureTarget();
     
 }
-

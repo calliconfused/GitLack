@@ -1,3 +1,8 @@
+/*
+ * This is a "library" for some fixed defined symbols
+ * 
+ */
+
 #ifndef BITMAPS_H
 #define BITMAPS_H
 

@@ -74,18 +74,6 @@ void receiveEvent(int bytes) {
     }
   }
 
-  /*
-  Serial.print("Recieve at time: \t");
-  Serial.println(millis());
-  Serial.print("Selected LED:\t\t");
-  Serial.print(SELECTED_LED);
-  Serial.print("\tSelected FAN:\t");
-  Serial.println(SELECTED_FAN);
-  Serial.print("CURRENT temperature:\t");
-  Serial.print(TEMPERATURE_CURRENT);
-  Serial.print("\tTARGET temperature:\t");
-  Serial.println(TEMPERATURE_TARGET);
-  */
 }
 
 void loop() {
@@ -138,4 +126,3 @@ void loop() {
 void vRPM_FAN() {
   COUNTER_RPM++;
 }
-
