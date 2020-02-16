@@ -11,7 +11,7 @@ So for the new printer I checked the internet for some collections of the IKEA L
 
 My target
 
-For the controller I wanted to use some of the parts what I already had at home and bought just new parts which I really need. So I found in some boxes 1 Arduino Uno R3 clone, 1 Arduino Nano close, IKEA DIODER LED strips, 12 Volt transformer, PCB plates, resistors, MOSFETs IRLZ34N, screw terminals and kilometer of wires. The parts which I just ordered during the planning phase are 2.8" TFT touchscreen display, temperature sensor GY-BME280, fan 120 mm with 4 pins, XL4015 DC to DC converter (12V to 9V for power supply of the Arduinos).
+For the controller I wanted to use some of the parts what I already had at home and bought just new parts which I really need. So I found in some boxes 1 Arduino Uno R3 clone with some additional pins and SMD, 1 Arduino Nano close, IKEA DIODER LED strips, 12 Volt transformer, PCB plates, resistors, MOSFETs IRLZ34N, screw terminals and kilometer of wires. The parts which I just ordered during the planning phase are 2.8" TFT touchscreen display, temperature sensor GY-BME280, fan 120 mm with 4 pins, XL4015 DC to DC converter (12V to 9V for power supply of the Arduinos).
 
 ![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200129_192654.jpg)
 
