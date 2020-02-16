@@ -5,13 +5,15 @@ This is a simple project of an enclosure for a 3D printer which controls the fan
 
 Why this project?
 
-So, during my experience with 3D printers I got on Xmas 2019 my new Anycubic 3D Mega. My old CTC printer got some issues during the time but more about this on a later stage. For the old printer I built a mixture of some cabinets out from the bargain basement of the well known Swedish furniture manufacturer. Cheap and already mounted, price was round about of 30 Euro with doors plus 4 LED strips (SMD 5050 with a very easy controller). The problem was that the alignment of the angle wasn't 90 degrees and if you put some weights on top of the cabinet and ... okay, the doors was not really parallel opened.
+So, during my experience with 3D printers I got on Xmas 2019 my new Anycubic 3D Mega. My old CTC printer got some issues during the time but more about this on a later stage. For the old printer I built a mixture of some cabinets out from the bargain basement of the well known Swedish furniture manufacturer. Cheap and already mounted, price was round about of 30 Euro with doors plus 4 LED strips (SMD 5050 with a very easy controller). The problem was that the alignment of the angle wasn't 90 degrees and if you put some weights on top of the cabinet and ... okay, the door was not really parallel opened.
 
-So for the new printer I checked the internet for some collections of the IKEA Lack table. It will look very good in my new office room at home. BUT I want to have an very smart enclosure with a controller of the temperature inside.
+So for the new printer I checked the internet for some collections of the IKEA Lack table. It will look very good in my new office room at home. BUT I want to have a very smart enclosure with a controller of the temperature inside.
 
 My target
 
 For the controller I wanted to use some of the parts what I already had at home and bought just new parts which I really need. So I found in some boxes 1 Arduino Uno R3 clone, 1 Arduino Nano close, IKEA DIODER LED strips, 12 Volt transformer, PCB plates, resistors, MOSFETs IRLZ34N, screw terminals and kilometer of wires. The parts which I just ordered during the planning phase are 2.8" TFT touchscreen display, temperature sensor GY-BME280, fan 120 mm with 4 pins, XL4015 DC to DC converter (12V to 9V for power supply of the Arduinos).
+
+![](https://github.com/calliconfused/GitLack/blob/master/Pictures/20200129_192654.jpg)
 
 The MAIN problem of material
 
